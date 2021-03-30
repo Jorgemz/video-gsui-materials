@@ -36,6 +36,8 @@ struct CardView: View {
   @Binding var score: Int
   @Binding var deck: [String]
   
+  @State private var revealed = false
+  
   let animalName: String
   let rotation = Angle(degrees: [0, 3.5, -10, -4.5, 6].randomElement()!)
   
@@ -59,6 +61,12 @@ struct CardView: View {
     .shadow(radius: 6)
     .frame(width: 320, height: 210)
     .animation(.spring())
+    .gesture(
+      TapGesture()
+        .onEnded({
+          self.revealed .toggle()
+        })
+    )
   }
 }
 

@@ -31,18 +31,57 @@
 /// THE SOFTWARE.
 
 import SwiftUI
+import os
+
+enum DiscardDirection {
+  case left
+  case right
+}
+
+let logger = Logger(subsystem: "com.dserweb.cardeo", category: "cardview")
 
 struct CardView: View {
   @Binding var score: Int
   @Binding var deck: [String]
   
   @State private var revealed = false
+  @State private var offset: CGSize = .zero
   
   let animalName: String
   let rotation = Angle(degrees: [0, 3.5, -10, -4.5, 6].randomElement()!)
   
+  func drag(animal: String, direction: DiscardDirection) -> Void {
+    switch direction {
+    case .left:
+      self.offset = .init(width: -1000, height: 0)
+      score += 1
+    case .right:
+      self.offset = .init(width: 1000, height: 0)
+    }
+    if animal == deck.first {
+      deck.removeAll()
+    }
+  }
+  
   var body: some View {
-    ZStack {
+    let drag = DragGesture()
+      .onChanged({
+        self.offset = $0.translation
+      })
+      .onEnded({
+        switch $0.translation.width {
+        case let width where width < -100:
+          self.drag(animal: self.animalName, direction: .left)
+          logger.log("left")
+        case let width where width > 100:
+          self.drag(animal: self.animalName, direction: .right)
+          logger.log("right")
+        default:
+          self.offset = .zero
+        }
+      })
+    
+    return ZStack {
       Rectangle()
         .foregroundColor(.red)
         .frame(width: 320, height: 210)
@@ -51,20 +90,26 @@ struct CardView: View {
         Image(animalName)
           .resizable()
           .scaledToFit()
-        Text(animalName)
-          .font(.largeTitle)
-          .foregroundColor(.white)
+        if self.revealed {
+          Text(animalName)
+            .font(.largeTitle)
+            .foregroundColor(.white)
+        }
         Spacer()
       }
     }
     .rotationEffect(rotation)
     .shadow(radius: 6)
     .frame(width: 320, height: 210)
+    .offset(self.offset)
     .animation(.spring())
+    .gesture(drag)
     .gesture(
-      TapGesture()
+      TapGesture(count: 2)
         .onEnded({
-          self.revealed .toggle()
+          withAnimation(.easeIn, {
+            self.revealed.toggle()
+          })
         })
     )
   }

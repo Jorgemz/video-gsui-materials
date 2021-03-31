@@ -47,6 +47,8 @@ struct CardView: View {
   @State private var revealed = false
   @State private var offset: CGSize = .zero
   
+  @GestureState private var isLongPressed = false
+  
   let animalName: String
   let rotation = Angle(degrees: [0, 3.5, -10, -4.5, 6].randomElement()!)
   
@@ -81,6 +83,14 @@ struct CardView: View {
         }
       })
     
+    let longPress = LongPressGesture(
+      minimumDuration: .greatestFiniteMagnitude,
+      maximumDistance: .greatestFiniteMagnitude)
+      .updating($isLongPressed, body: { value, state, _ in
+        state = value
+      })
+      .simultaneously(with: drag)
+    
     return ZStack {
       Rectangle()
         .foregroundColor(.red)
@@ -99,11 +109,11 @@ struct CardView: View {
       }
     }
     .rotationEffect(rotation)
-    .shadow(radius: 6)
+    .shadow(radius: isLongPressed ? 10 : 6)
+    .scaleEffect(isLongPressed ? 1.1 : 1)
     .frame(width: 320, height: 210)
     .offset(self.offset)
     .animation(.spring())
-    .gesture(drag)
     .gesture(
       TapGesture(count: 2)
         .onEnded({
@@ -111,6 +121,7 @@ struct CardView: View {
             self.revealed.toggle()
           })
         })
+        .exclusively(before: longPress)
     )
   }
 }

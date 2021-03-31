@@ -35,6 +35,23 @@ import SwiftUI
 struct DailyAnimal: View {
   var animalName: String
   
+  enum SequenceState {
+    case inactive
+    case pressing
+    case manipulating
+    
+    var color: Color {
+      switch self {
+      case .inactive, .pressing:
+        return .black
+      case .manipulating:
+        return .red
+      }
+    }
+  }
+  
+  @GestureState private var gestureState = SequenceState.inactive
+  
   @GestureState private var gestureRotation = Angle(degrees: 0)
   @State private var rotation = Angle(degrees: 0)
   
@@ -58,6 +75,16 @@ struct DailyAnimal: View {
         self.rotation += value.second ?? Angle(degrees: 0)
       })
     
+    let pressMagnifyRotate = SequenceGesture(LongPressGesture(), magnifyRotate)
+      .updating($gestureState, body: { value, state, _ in
+        switch value {
+        case .first(_):
+          state = .pressing
+        case .second(_, _):
+          state = .manipulating
+        }
+      })
+    
     return VStack(spacing: 50.0) {
       Text(animalName)
         .font(.largeTitle)
@@ -66,9 +93,10 @@ struct DailyAnimal: View {
         .resizable()
         .scaledToFit()
         .frame(width: 300, height: 300)
+        .foregroundColor(gestureState.color)
         .scaleEffect(scale + gestureScale)
         .rotationEffect(rotation + gestureRotation)
-        .gesture(magnifyRotate)
+        .gesture(pressMagnifyRotate)
     }
   }
 }

@@ -46,16 +46,16 @@ struct DailyAnimal: View {
       .updating($gestureScale, body: { value, state, _ in
         state = value - 1
       })
-      .onEnded({ value in
-        self.scale += value - 1
-      })
     
     let rotate = RotationGesture()
       .updating($gestureRotation, body: { value, state, _ in
         state = value
       })
+    
+    let magnifyRotate = SimultaneousGesture(magnify, rotate)
       .onEnded({ value in
-        self.rotation += value
+        self.scale += (value.first ?? 0) - 1
+        self.rotation += value.second ?? Angle(degrees: 0)
       })
     
     return VStack(spacing: 50.0) {
@@ -66,10 +66,9 @@ struct DailyAnimal: View {
         .resizable()
         .scaledToFit()
         .frame(width: 300, height: 300)
-        .rotationEffect(rotation + gestureRotation)
         .scaleEffect(scale + gestureScale)
-        .gesture(magnify)
-        .gesture(rotate)
+        .rotationEffect(rotation + gestureRotation)
+        .gesture(magnifyRotate)
     }
   }
 }
